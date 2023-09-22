@@ -41,7 +41,7 @@ History 20230815 begin
 #include <PubSubClient.h>
 #include <Wire.h>
 #include <SPI.h>
-#include "Sensor_BME280.h"
+#include "Sensor_BME280.h" // Sensor BME280
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 
