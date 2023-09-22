@@ -46,8 +46,8 @@ History 20230815 begin
 #include <Adafruit_BME280.h>
 
 // #define DEBUG
-#define wifi_ssid "klncqwoez283431pidd1ic9r32f8931"
-#define wifi_password "h785fh6108b01"
+#define wifi_ssid my_Wifi_ssid
+#define wifi_password My_WiFi_passwort
 #define mqtt_server "192.168.178.65"
 #define mqtt_user "mqtt_olaf"
 #define mqtt_password "Kastor1956"
