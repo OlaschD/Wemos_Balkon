@@ -1,3 +1,3 @@
-#include "Sensor_BME280.h"
+//  nicht noch mal die .h Datei definieren
 
 // Funktionen

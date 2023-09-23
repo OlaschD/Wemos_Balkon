@@ -42,37 +42,19 @@ History 20230815 begin
 #include <Wire.h>
 #include <SPI.h>
 #include "Sensor_BME280.h" // Sensor BME280
-#include <Adafruit_Sensor.h>
-#include <Adafruit_BME280.h>
+
+#include <secret.h>
 
 // #define DEBUG
-#define wifi_ssid my_Wifi_ssid
-#define wifi_password My_WiFi_passwort
-#define mqtt_server "192.168.178.65"
-#define mqtt_user "mqtt_olaf"
-#define mqtt_password "Kastor1956"
-#define EspHostname "Wemos1"
+const char *wifi_ssid = My_WiFi_ssid;
+const char *wifi_password = My_WiFi_passwort;
+const char *mqtt_server = My_mqtt_server;
+const char *mqtt_user = My_mqtt_user;
+const char *mqtt_password = My_mqtt_passwort;
+const char *EspHostname = My_EspHostname;
 String clientID = "Wemos-1";
 const char *WemosDSTemperatur = "wemos/temperatur";
 const char *WemosName = "wemos/name";
-#define WemosStatus "wemos/status"
-const char *WemosBMEtemp = "wemos/bme280/temp";
-const char *WemosBMEhum = "wemos/bme280/hum";
-const char *WemosBMEpres = "wemos/bme280/pres";
-float temp(NAN), hum(NAN), pres(NAN);
-// BME280
-float h, t, p;
-unsigned int l;
-char temperatureCString[8];
-char humidityCString[7];
-char pressureCString[8];
-String bme_temp_str = "";
-String bme_hum_str = "";
-String bme_pre_str = "";
-#define SEALEVELPRESSURE_HPA (1010.25)
-
-Adafruit_BME280 bme; // I²C
-unsigned long delayTime;
 
 float DS_Temperatur;
 String WTemp;
