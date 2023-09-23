@@ -42,16 +42,19 @@ History 20230815 begin
 #include <Wire.h>
 #include <SPI.h>
 #include "Sensor_BME280.h" // Sensor BME280
-
+#include <ArduinoJson.h>
 #include <secret.h>
 
-// #define DEBUG
+StaticJsonDocument<100> doc;
+String meinJson;
+#define DEBUG
 const char *wifi_ssid = My_WiFi_ssid;
 const char *wifi_password = My_WiFi_passwort;
 const char *mqtt_server = My_mqtt_server;
 const char *mqtt_user = My_mqtt_user;
 const char *mqtt_password = My_mqtt_passwort;
 const char *EspHostname = My_EspHostname;
+bool mqtt_Online;
 String clientID = "Wemos-1";
 const char *WemosDSTemperatur = "wemos/temperatur";
 const char *WemosName = "wemos/name";
@@ -65,11 +68,6 @@ PubSubClient client(espClient);
 
 const int LED = 13;    // D7 = SPI MOSI = GPIO13
 const int Taster = 15; // D8 = SPI CS = GPIO15
-
-// RX = GPIO3 = RXD0
-// TX = GPIO1 = TXD0
-// D1 = GPIO5 = SCL
-// D2 = GPIO4 = SDA
 
 int Taster_Status = 0;
 
@@ -143,6 +141,7 @@ void setup()
 
 void loop()
 {
+  mqtt_Online = false;
   if (!client.connected())
   {
     reconnect();
@@ -185,6 +184,24 @@ void loop()
 
     delay(delayTime);
   }
+  meinJson = "";
+  doc["temperature"] = temperatureCString;
+  doc["humidity"] = humidityCString;
+  doc["pressure"] = pressureCString;
+  doc["dstemp"] = ds18B20_Cstring;
+  if (mqtt_Online)
+  {
+    doc["Status"] = "online";
+  }
+  else
+  {
+    doc["Status"] = "nicht verbunden";
+  }
+  serializeJson(doc, meinJson);
+#ifdef Debug
+  Serial.println(meinJson);
+#endif
+  // mqtt_Online = false;
 }
 
 void printAddress(DeviceAddress deviceAddress)
@@ -248,6 +265,7 @@ void callback(char *topic, byte *message, unsigned int length)
 
 void reconnect()
 {
+  mqtt_Online = false;
   // Loop until we're reconnected
   while (!client.connected())
   {
@@ -255,9 +273,11 @@ void reconnect()
     // Create a random client ID
     clientID += String(random(0xffff), HEX);
     // Attempt to connect
+
     if (client.connect(clientID.c_str(), mqtt_user, mqtt_password))
     {
       Serial.println("verbunden");
+      mqtt_Online = true;
       // Once connected, publish an announcement...
       client.publish(WemosName, EspHostname);
       DS_Temperatur = getTemperatur();
@@ -275,6 +295,7 @@ void reconnect()
       Serial.println(" nochmal in 5 seconds");
       // Wait 5 seconds before retrying
       delay(5000);
+      mqtt_Online = false;
     }
   }
 }
