@@ -41,13 +41,11 @@ History 20230815 begin
 #include <PubSubClient.h>
 #include <Wire.h>
 #include <SPI.h>
-#include "Sensor_BME280.h" // Sensor BME280
-#include <ArduinoJson.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
+// #include "Sensor_BME280.h" // Sensor BME280
 #include <secret.h>
-
-StaticJsonDocument<100> doc;
-String meinJson;
-#define DEBUG
+// #define DEBUG // auskommentiert wird nichts
 const char *wifi_ssid = My_WiFi_ssid;
 const char *wifi_password = My_WiFi_passwort;
 const char *mqtt_server = My_mqtt_server;
@@ -56,16 +54,32 @@ const char *mqtt_password = My_mqtt_passwort;
 const char *EspHostname = My_EspHostname;
 bool mqtt_Online;
 String clientID = "Wemos-1";
-const char *WemosDSTemperatur = "wemos/temperatur";
-const char *WemosName = "wemos/name";
-
+const char *WemosDSTemperatur = "wemos/DS-Temperatur";
+const char *WemosName = "wemos/Name";
+// const char *WemosJson = "wemos/myJson";
+const char *WemosBMEtemp = "wemos/bme280/temp";
+const char *WemosBMEhum = "wemos/bme280/hum";
+const char *WemosBMEpres = "wemos/bme280/pres";
+float temp(NAN), hum(NAN), pres(NAN);
+// BME280
+float h, t, p;
+unsigned int l;
+char temperatureCString[8];
+char humidityCString[7];
+char pressureCString[8];
+String bme_temp_str = "";
+String bme_hum_str = "";
+String bme_pre_str = "";
+#define SEALEVELPRESSURE_HPA (1010.25)
+Adafruit_BME280 bme; // I²C
+unsigned long delayTime;
 float DS_Temperatur;
 String WTemp;
 int timeout;
 char ds18B20_Cstring[6];
 WiFiClient espClient;
 PubSubClient client(espClient);
-
+int z;
 const int LED = 13;    // D7 = SPI MOSI = GPIO13
 const int Taster = 15; // D8 = SPI CS = GPIO15
 
@@ -162,48 +176,34 @@ void loop()
     previousMillis = currentMillis; // vorheriger Wert an currentMillis übergeben
                                     // Sensor_auslesen();  // hier die Function die aufgerufen werden soll
     client.publish(WemosName, EspHostname);
+    z++;
     DS_Temperatur = getTemperatur();
     dtostrf(DS_Temperatur, 3, 2, ds18B20_Cstring);
     client.publish(WemosDSTemperatur, ds18B20_Cstring);
+    Serial.print("DS: ");
     Serial.println(ds18B20_Cstring); // String(DS_Temperatur).c_str());
-    client.publish(WemosStatus, "online");
+                                     // client.publish(WemosStatus, "online");
 #ifdef Debug
     printValues();
 #endif
     printBME280Data();
-    client.publish(WemosBMEtemp, temperatureCString);
-    client.publish(WemosBMEhum, humidityCString);
-    client.publish(WemosBMEpres, pressureCString);
     Serial.println("BME280 Wert augeben...");
-    Serial.print("Temperatur: ");
+    Serial.print("DS-Temperatur: ");
     Serial.println(temperatureCString);
     Serial.print("Luftpruck: ");
     Serial.println(pressureCString);
     Serial.print("Feuchtigkeit: ");
     Serial.println(humidityCString);
+    // delay(delayTime);
 
-    delay(delayTime);
+    client.publish(WemosBMEtemp, temperatureCString);
+    client.publish(WemosBMEhum, humidityCString);
+    client.publish(WemosBMEpres, pressureCString);
+    // #endif
+    // mqtt_Online = false;
   }
-  meinJson = "";
-  doc["temperature"] = temperatureCString;
-  doc["humidity"] = humidityCString;
-  doc["pressure"] = pressureCString;
-  doc["dstemp"] = ds18B20_Cstring;
-  if (mqtt_Online)
-  {
-    doc["Status"] = "online";
-  }
-  else
-  {
-    doc["Status"] = "nicht verbunden";
-  }
-  serializeJson(doc, meinJson);
-#ifdef Debug
-  Serial.println(meinJson);
-#endif
-  // mqtt_Online = false;
 }
-
+// D:\Information-Bücher\gekauft\EdisTechLab\Edis-Techlab_Heimautomation-und-Elektroni_Sep23.pdf
 void printAddress(DeviceAddress deviceAddress)
 {
   for (uint8_t i = 0; i < 8; i++)
@@ -284,8 +284,8 @@ void reconnect()
       dtostrf(DS_Temperatur, 3, 2, ds18B20_Cstring);
       client.publish(WemosDSTemperatur, ds18B20_Cstring);
       // dtostrf(WTemp, 5,2,DS_Temperatur);
-      Serial.println(ds18B20_Cstring); // String(DS_Temperatur).c_str());
-      client.publish(WemosStatus, "online");
+      // Serial.println(ds18B20_Cstring); // String(DS_Temperatur).c_str());
+      // client.publish(WemosStatus, "online");
       // ... and resubscribe
     }
     else
@@ -332,10 +332,11 @@ void printBME280Data()
   t = temp;
   h = hum;
   p = pres;
-  Serial.println(String(temp).c_str());
+  // Serial.println(String(temp).c_str());
   bme_temp_str = dtostrf(t, 5, 2, temperatureCString);
   bme_hum_str = dtostrf(h, 5, 2, humidityCString);
   bme_pre_str = dtostrf(p, 4, 2, pressureCString);
+
 #ifdef DEBUG
 
 #endif
